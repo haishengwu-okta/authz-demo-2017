@@ -160,7 +160,7 @@ view m =
         [ section []
               [ img [ class "company-logo", src "/assets/images/pge-spot-full-rgb-pos-lg.png"] []
               , h2 [ class "company-title"] [ text "Pacific Gas and Electric Company" ]
-              , span [] [ text "Mark Stevents"]
+              , span [] [ text "Mark Stevens"]
               ]
 
         , h1 [] [ text "Energy Production & Usage" ]

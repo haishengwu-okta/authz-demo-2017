@@ -42,19 +42,14 @@ main =
 --------------------------------------------------
 
 type alias ProgramOptions =
-    { tokenResp : Maybe TokenResp
-    , config : Config
+    { accessTokenResp : Maybe AccessTokenResp
+    , userInfo : Maybe UserInfo
     }
 
 type alias Model =
-    { config : Config
-    , tokenResp : Maybe TokenResp
-    , userInfo : Result String UserInfo
+    { accessTokenResp : Maybe AccessTokenResp
+    , userInfo : Maybe UserInfo
     , usage : List Usage
-    }
-
-type alias Config =
-    { userInfoUrl : String
     }
 
 type alias Usage =
@@ -64,40 +59,44 @@ type alias Usage =
     , perc : Float
     }
 
-type alias TokenResp =
-    { idToken : String
-    , accessToken : String
-    , scope : List String
+type alias AccessTokenResp =
+    { accessToken : String
+    , scopes : List String
     }
 
 type alias UserInfo =
     { sub : String
-    , fullname : String
-    , login : String
-    , scope : List String
+    , name : String
     }
 
 type Msg
     = LoginRedirect
-    | UserInfoResp (Result Http.Error UserInfo)
 
 --------------------------------------------------
 -- INIT
 --------------------------------------------------
 
 init : ProgramOptions  -> (Model, Cmd Msg)
-init opt =
-  case opt.tokenResp of
-      Nothing -> ( Model opt.config Nothing (Err "") defaultUsage, Cmd.none )
-      Just tr -> ( Model opt.config (Just tr) (Err "") defaultUsage, fetchUserInfo opt.config tr )
+init opt = let us = case opt.userInfo of
+               Just ui -> usage2
+               Nothing -> usage1
+           in
+               ( Model opt.accessTokenResp opt.userInfo us, Cmd.none )
 
-defaultUsage : List Usage
-defaultUsage =
+usage1 : List Usage
+usage1 =
     [ makeUsage 0 428 0.201
     , makeUsage 0 432 0.205
     , makeUsage 0 544 0.211
     , makeUsage 0 368 0.200
     ]
+
+usage2 : List Usage
+usage2 = [ makeUsage 105 428 0.201
+         , makeUsage 122 432 0.205
+         , makeUsage 145 544 0.211
+         , makeUsage 116 368 0.200
+         ]
 
 makeUsage : Int -> Int -> Float -> Usage
 makeUsage s p perc = Usage s p (p - s) perc
@@ -109,45 +108,7 @@ makeUsage s p perc = Usage s p (p - s) perc
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    LoginRedirect ->
-        ( model, loginRedirect () )
-
-    UserInfoResp (Ok user) -> let scope2 = case model.tokenResp of
-                                          Nothing -> []
-                                          Just tr -> tr.scope
-                                  user2 = Ok { user | scope = scope2 }
-                                  usage2 = [ makeUsage 105 428 0.201
-                                           , makeUsage 122 432 0.205
-                                           , makeUsage 145 544 0.211
-                                           , makeUsage 116 368 0.200
-                                           ]
-                              in ( { model | userInfo = user2, usage = usage2 }, Cmd.none )
-    UserInfoResp (Err e) -> ( { model | userInfo = Err (toString e) }, Cmd.none)
-
-
-fetchUserInfo : Config -> TokenResp -> Cmd Msg
-fetchUserInfo config tr =
-    let req = Http.request
-              { method = "GET"
-              , headers =
-                    [ Http.header "Authorization" ("Bearer " ++ tr.accessToken)
-                    ]
-              , url = config.userInfoUrl
-              , body = Http.emptyBody
-              , expect = Http.expectJson decodeUserInfo
-              , timeout = Nothing
-              , withCredentials = False
-              }
-    in
-        Http.send UserInfoResp req
-
-decodeUserInfo : Decode.Decoder UserInfo
-decodeUserInfo =
-    DP.decode UserInfo
-        |> DP.required "sub" Decode.string
-        |> DP.optional "name" Decode.string "User name not found"
-        |> DP.optional "preferred_username" Decode.string "Email not found"
-        |> DP.hardcoded []
+    LoginRedirect -> ( model, loginRedirect () )
 
 
 --------------------------------------------------
@@ -186,43 +147,52 @@ view m =
         ]
 
 solarRow : Model -> Html Msg
-solarRow m = case m.userInfo of
-                 Err _ -> tr []
-                          [ td [] [ text "Solar Production"]
-                          , td [colspan 4, class "link-solar-row"]
-                              [ button
-                                    [ id "login"
-                                    , class "ui icon button blue"
-                                    , onClick LoginRedirect
-                                    ]
-                                    [ text "Link Solar Account" ]
-                              ]
-                          ]
-                 Ok _ -> tr []
-                         (td [] [ text "Solar Production (Vivint)"] :: (List.map (\u -> td [] [text <| toString u.solar]) m.usage))
+solarRow m =
+    case m.userInfo of
+        Nothing -> tr []
+                   [ td [] [ text "Solar Production"]
+                   , td [colspan 4, class "link-solar-row"]
+                       [ button
+                             [ id "login"
+                             , class "ui icon button blue"
+                             , onClick LoginRedirect
+                             ]
+                             [ text "Link Solar Account" ]
+                       ]
+                   ]
+        Just _ -> tr []
+                  (td [] [ text "Solar Production (Vivint)"] :: (List.map (\u -> td [] [text <| toString u.solar]) m.usage))
 
 additionalData : Model -> Html Msg
 additionalData m =
     div [ class "ui container" ]
         [ h5 [ class "ui header" ] [ text "Additional Data" ],
           (case m.userInfo of
-               Ok ui -> displayUserInfo ui
-               Err e -> p [] [ text e ]
+               Just ui -> displayUserInfo ui m.accessTokenResp
+               Nothing -> p [] [ ]
           )
         ]
 
-displayUserInfo : UserInfo -> Html Msg
-displayUserInfo ui =
+displayUserInfo : UserInfo -> Maybe AccessTokenResp -> Html Msg
+displayUserInfo ui aresp =
     div [ class "ui grid" ]
         [ div [ class "four wide column" ]
               [ img [ class "ui image", src "/assets/images/vivint-solar.png" ] [] ]
 
         , div [ class "twelve wide column" ]
-            [ h5 [ class "ui header" ] [ text ("Account Name: " ++ ui.fullname) ]
+            [ h5 [ class "ui header" ] [ text ("Account Name: " ++ ui.name) ]
             , p [] [ text "This application can do following with Vivint Solar on your behalf: " ]
-            , ul [] (List.map (\s -> li [] [ text s ]) ui.scope)
+            , displayScopes aresp
             ]
         ]
+
+displayScopes : Maybe AccessTokenResp -> Html Msg
+displayScopes aresp =
+    let scopes = case aresp of
+                     Just ar -> List.filter (\s -> s /= "openid" && s /= "profile") ar.scopes
+                     Nothing -> []
+    in
+        ul [] (List.map (\s -> li [] [ text s ]) scopes)
 
 --------------------------------------------------
 -- PORTs

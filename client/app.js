@@ -20,7 +20,7 @@ export function bootstrap(config) {
 
   const authzUrl = `${config.oktaUrl}oauth2/${config.asId}/v1/authorize`;
   const userInfoUrl = `${config.oktaUrl}oauth2/${config.asId}/v1/userinfo`;
-  const issuer = `${config.oktaUrl}/oauth2/${config.asId}`;
+  const issuer = `${config.oktaUrl}oauth2/${config.asId}`;
 
   // init auth sdk
   const auth = new OktaAuth({
@@ -31,46 +31,33 @@ export function bootstrap(config) {
     authorizeUrl: authzUrl,
   });
 
-  const getScopes = (scopeString) => {
-    const xs = decodeURIComponent(scopeString).split('+');
-
-    return xs.filter(x => ['openid', 'profile'].indexOf(x) === -1);
+  const renderView = (accessTokenObj, userInfo) => {
+    // render main view
+    const containerEl = document.querySelector(config.container);
+    const app = Elm.Main.embed(containerEl, {
+      accessTokenResp: accessTokenObj,
+      userInfo: userInfo,
+    });
+    // Elm -> JS
+    app.ports.loginRedirect.subscribe(() => {
+      loginRedirect(auth);
+    });
   };
 
-  // read token from URL
-  let hashObj = null;
+  auth.token.parseFromUrl()
+    .then(function(tokens) {
+      const accessTokenObj = tokens[0];
 
-  if (window.location.hash) {
-    const hashes = window.location.hash.substr(1).split('&');
-    hashObj = hashes.reduce((init, x) => {
-      const xs = x.split('=');
-      let key = xs[0];
-      const val = xs[1];
-      return Object.assign({}, init, {[key]: val});
-    }, {});
-  }
-
-  const tokenResp = hashObj ? {
-    accessToken: hashObj['access_token'],
-    idToken: hashObj['id_token'],
-    scope: getScopes(hashObj['scope']),
-  } : null;
-
-  console.log(hashObj);
-
-  // render main view
-  const containerEl = document.querySelector(config.container);
-  const app = Elm.Main.embed(containerEl, {
-    config: {
-      userInfoUrl
-    },
-    tokenResp: tokenResp,
-  });
-
-  // Elm -> JS
-  app.ports.loginRedirect.subscribe(() => {
-    loginRedirect(auth);
-  });
+      return auth.token.getUserInfo(accessTokenObj)
+        .then(function(user) {
+          renderView(accessTokenObj, user);
+        });
+    })
+    .catch(function(err) {
+      console.warn(err);
+      renderView(null, null);
+    })
+  ;
 
 }
 

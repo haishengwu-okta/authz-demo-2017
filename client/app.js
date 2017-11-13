@@ -12,14 +12,12 @@
 
 import OktaAuth from '@okta/okta-auth-js/jquery';
 import loginRedirect from './login-redirect';
-
-import css from './main.css';
 import Elm from './Main.elm';
 
-export function bootstrap(config) {
+require('./main.css');
 
+export function bootstrap (config) {
   const authzUrl = `${config.oktaUrl}oauth2/${config.asId}/v1/authorize`;
-  const userInfoUrl = `${config.oktaUrl}oauth2/${config.asId}/v1/userinfo`;
   const issuer = `${config.oktaUrl}oauth2/${config.asId}`;
 
   // init auth sdk
@@ -45,20 +43,18 @@ export function bootstrap(config) {
   };
 
   auth.token.parseFromUrl()
-    .then(function(tokens) {
+    .then(function (tokens) {
       const accessTokenObj = tokens[0];
 
       return auth.token.getUserInfo(accessTokenObj)
-        .then(function(user) {
+        .then(function (user) {
           renderView(accessTokenObj, user);
         });
     })
-    .catch(function(err) {
+    .catch(function (err) {
       console.warn(err);
       renderView(null, null);
-    })
-  ;
-
+    });
 }
 
 export default bootstrap;

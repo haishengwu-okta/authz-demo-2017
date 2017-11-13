@@ -10,10 +10,18 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-export default function loginRedirect(auth) {
+export default function loginRedirect (auth) {
   auth.token.getWithRedirect({
-    responseType: ['token', 'id_token'],
-    scopes: ['openid', 'profile', 'profile:read', 'usage:read'],
+    responseType: [
+      'token',
+      'id_token',
+    ],
+    scopes: [
+      'openid',
+      'profile',
+      'profile:read',
+      'usage:read',
+    ],
     prompt: 'consent',
   });
 }

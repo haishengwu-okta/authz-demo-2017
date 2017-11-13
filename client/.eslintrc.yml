@@ -1,0 +1,7 @@
+extends: standard
+rules:
+  semi: ["error", "always"]
+  max-len: [2, 130]
+  comma-dangle: [2, "always"]
+env:
+  browser: true

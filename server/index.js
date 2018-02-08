@@ -9,15 +9,14 @@
  *
  * See the License for the specific language governing permissions and limitations under the License.
  */
-
 'use strict';
 
 const path = require('path');
 const express = require('express');
 const session = require('express-session');
 const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser');
 const cons = require('consolidate');
-
 
 const args = process.argv;
 const configFile = args[2] || '.samples.config.json';
@@ -28,17 +27,12 @@ const templateDir = path.resolve(__dirname, '../public');
 const frontendDir = path.resolve(__dirname, '../dist');
 
 const app = express();
-const mainH = (req, res) => {
-  res.render('index', { config });
-};
 
 app.use('/assets', express.static(frontendDir));
-
 // Use mustache to serve up the server side templates
 app.engine('mustache', cons.mustache);
 app.set('view engine', 'mustache');
 app.set('views', templateDir);
-
 // The authorization code flows are stateful - they use a session to
 // store user state (vs. relying solely on an id_token or access_token).
 app.use(cookieParser());
@@ -48,10 +42,32 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
 }));
+app.use(bodyParser.json()); // for parsing application/json
+app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+
+// ------------ handlers
+const mainH = (req, res) => {
+  res.render('app1', { config });
+};
+const appsH = (req, res) => {
+  const appName = req.params.name;
+  res.render(appName, { config });
+};
+const appsPostH = (req, res) => {
+  const appName = req.params.name;
+  setTimeout(() => {
+    res.render(appName, { 
+      config,
+      idToken: req.body.id_token,
+    });
+  }, 2000);
+};
 
 // These are the routes that need to be implemented to handle the
 // authorization code scenarios
 app.get('/', mainH);
+app.get('/apps/:name', appsH);
+app.post('/apps/:name', appsPostH);
 app.get('*', mainH);
 
 app.listen(config.server.port, () => {

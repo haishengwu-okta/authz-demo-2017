@@ -11,10 +11,10 @@
  */
 
 import OktaAuth from '@okta/okta-auth-js/jquery';
-import loginRedirect from './login-redirect';
-import Elm from './Main.elm';
+import loginRedirect from './app1/login-redirect';
+import Elm from './app1/Main.elm';
 
-require('./main.css');
+require('./app1/main.css');
 
 export function bootstrap (config) {
   const authzUrl = `${config.oktaUrl}oauth2/${config.asId}/v1/authorize`;

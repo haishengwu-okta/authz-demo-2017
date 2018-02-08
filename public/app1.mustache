@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title> PG&amp;E Dashboard</title>
+    <link href="/assets/css/semantic-ui/semantic.min.css" type="text/css" rel="stylesheet"/>
+    <base href="/"/>
+  </head>
+
+  <body id="app-container">
+
+    <script src="/assets/app1.js"></script>
+
+    <script>
+     var options = {
+       container: '#app-container',
+       oktaUrl: '{{{config.oidc.oktaUrl}}}',
+       asId: '{{{config.oidc.asId}}}',
+       clientId: '{{config.oidc.clientId}}',
+       redirectUri: '{{{config.oidc.redirectUri}}}'
+     };
+
+     app1.bootstrap(options);
+    </script>
+  </body>
+</html>

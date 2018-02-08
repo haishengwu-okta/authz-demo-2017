@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -9,7 +10,7 @@
 
   <body id="app-container">
 
-    <script src="/assets/bundle.js"></script>
+    <script src="/assets/app2.js"></script>
 
     <script>
      var options = {
@@ -17,10 +18,13 @@
        oktaUrl: '{{{config.oidc.oktaUrl}}}',
        asId: '{{{config.oidc.asId}}}',
        clientId: '{{config.oidc.clientId}}',
-       redirectUri: '{{{config.oidc.redirectUri}}}'
+       redirectUri: '{{{config.oidc.redirectUri}}}',
+       {{#idToken}}
+       idToken: '{{{idToken}}}',
+       {{/idToken}}
      };
 
-     bundle.bootstrap(options);
+     app2.bootstrap(options);
     </script>
   </body>
 </html>

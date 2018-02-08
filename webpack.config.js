@@ -23,8 +23,11 @@ console.log(`Building frontend assets into ${outPath}`);
 
 module.exports = {
   entry: {
-    bundle: [
-      `./${clientDir}/app.js`,
+    app1: [
+      `./${clientDir}/app1.js`,
+    ],
+    app2: [
+      `./${clientDir}/app2.js`,
     ],
   },
   output: {

@@ -13,6 +13,8 @@
 import OktaAuth from '@okta/okta-auth-js/jquery';
 import Elm from './app2/Main.elm';
 
+import './app2/main.css';
+
 function loginRedirect (auth) {
   auth.token.getWithRedirect({
     responseType: [

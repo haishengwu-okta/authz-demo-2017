@@ -47,7 +47,7 @@ Note: you can also edit the app to include TOS and Policy URIs if you want those
     - If you use homebrew (https://brew.sh), just run `brew install yarn`
     - `curl -o- -L https://yarnpkg.com/install.sh | bash`
     - if you dont have yarn, use `npm` instead of `yarn` at following steps.
-2. install node-6.x or higher (https://nodejs/org)
+2. install node-6.x or higher (https://nodejs.org)
 3. `yarn install`
 4. `yarn start` with default settings from `.samples.config.json`
     OR run app with customized settings

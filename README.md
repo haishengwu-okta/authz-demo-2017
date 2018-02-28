@@ -42,13 +42,15 @@ Note: you can also edit the app to include TOS and Policy URIs if you want those
 
 
 ### Configure and Run Application
-0. install yarn
+0. clone this repository e.g., `git clone https://github.com/haishengwu-okta/authz-demo-2017.git` and then `cd authz-demo-2017` to open the directory in terminal
+1. install yarn
+    - If you use homebrew (https://brew.sh), just run `brew install yarn`
     - `curl -o- -L https://yarnpkg.com/install.sh | bash`
     - if you dont have yarn, use `npm` instead of `yarn` at following steps.
-1. install node-6.x or higher
-2. `yarn install`
-3. `yarn start` with default settings from `.samples.config.json`
-4. run app with customized settings
+2. install node-6.x or higher (https://nodejs/org)
+3. `yarn install`
+4. `yarn start` with default settings from `.samples.config.json`
+    OR run app with customized settings
     - copy `.samples.config.json` to `configs` folder like `cp .samples.config.json configs/foo.json`
     - change the `configs/foo.json` at your convenience
     - `yarn start configs/foo.json`

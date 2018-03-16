@@ -60,7 +60,7 @@ const appsPostH = (req, res) => {
       config,
       idToken: req.body.id_token,
     });
-  }, 2000);
+  }, 3000);
 };
 
 // These are the routes that need to be implemented to handle the

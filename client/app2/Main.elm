@@ -50,7 +50,9 @@ type alias Model =
     }
 
 type Msg
-    = LoginRedirect
+    = RedirectFormPost
+      | PopupOktaPostMessage
+      | RedirectCodeFlow
 
 --------------------------------------------------
 -- INIT
@@ -67,8 +69,9 @@ init opt = ( Model opt.idToken, Cmd.none )
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    LoginRedirect -> ( model, loginRedirect () )
-
+    RedirectFormPost -> ( model, invokeAuthFn "redirectFormPost" )
+    PopupOktaPostMessage -> ( model, invokeAuthFn "popupOktaPostMessage" )
+    RedirectCodeFlow -> ( model, invokeAuthFn "redirectCodeFlow" )
 
 --------------------------------------------------
 -- VIEW
@@ -77,28 +80,56 @@ update msg model =
 view : Model -> Html Msg
 view m =
     div [ name "elm-main-container" ]
-      [
-      (case m.idToken of 
-        Nothing -> viewButton
-        Just token -> viewToken token
-      )
+      [ viewButtons
+      , viewToken m.idToken
       ]
-viewButton : Html Msg      
-viewButton = button [ id "login"
-                    , class "ui icon button blue"
-                    , onClick LoginRedirect
-                    ]
-                    [ text "Link Okta Account" ]
 
-viewToken : String -> Html Msg
-viewToken token = 
-    div []
-      [ h1 [] [ text "id_token" ]
-      , code [] [ text token ]    
-      ]           
+viewButtons : Html Msg
+viewButtons =
+    div [ class "ui list"]
+        [ div [ class "item" ]
+              [ div [ class "content"]
+                    [ button [ id "login"
+                             , class "ui icon button blue"
+                             , onClick RedirectFormPost
+                             ]
+                          [ text "Redirect - Okta Form Post" ]
+                    ]
+              ]
+        , div [ class "item" ]
+            [ div [ class "content"]
+                  [ button [ id "login-okta-post-message"
+                           , class "ui icon button blue"
+                           , onClick PopupOktaPostMessage
+                           ]
+                        [ text "Popup - Okta Post Message" ]
+                  ]
+            ]
+
+        , div [ class "item" ]
+            [ div [ class "content"]
+                  [ button [ id "login-code-flow"
+                           , class "ui icon button blue"
+                           , onClick RedirectCodeFlow
+                           ]
+                        [ text "Redirect - authorize code" ]
+                  ]
+            ]
+
+        ]
+viewToken : Maybe String -> Html Msg
+viewToken token =
+    case token of
+        Nothing -> span [] [ text "no id token found" ]
+        Just t -> div []
+                  [ h1 [] [ text "id_token" ]
+                  , code [] [ text t ]
+                  ]
 
 --------------------------------------------------
 -- PORTs
 --------------------------------------------------
 
-port loginRedirect : () -> Cmd msg
+port invokeAuthFn : String -> Cmd msg
+port redirectFormPost : () -> Cmd msg
+port popupOktaPostMessage : () -> Cmd msg

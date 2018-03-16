@@ -12,23 +12,7 @@
 
 import OktaAuth from '@okta/okta-auth-js/jquery';
 import Elm from './app2/Main.elm';
-
 import './app2/main.css';
-
-function loginRedirect (auth) {
-  auth.token.getWithRedirect({
-    responseType: [
-      'token',
-      'id_token',
-    ],
-    scopes: [
-      'openid',
-      'profile',
-    ],
-    responseMode: 'form_post',
-    //prompt: 'consent',
-  });
-}
 
 export function bootstrap (config) {
   const authzUrl = `${config.oktaUrl}oauth2/${config.asId}/v1/authorize`;
@@ -43,6 +27,55 @@ export function bootstrap (config) {
     authorizeUrl: authzUrl,
   });
 
+  function redirectFormPost (auth) {
+    auth.token.getWithRedirect({
+      responseType: [
+        'token',
+        'id_token',
+      ],
+      scopes: [
+        'openid',
+        'profile',
+      ],
+      responseMode: 'form_post',
+      //prompt: 'consent',
+    });
+  }
+  function redirectCodeFlow(auth) {
+    auth.token.getWithRedirect({
+      responseType: [
+        'code',
+      ],
+      scopes: [
+        'openid',
+        'profile',
+      ],
+      //prompt: 'consent',
+    });
+  }
+
+  function popupOktaPostMessage(auth) {
+    auth.token.getWithPopup({
+      responseType: ['token', 'id_token' ],
+      scopes: ['openid', 'profile'],
+      //responseMode: 'okta_post_message',
+      responseMode: 'fragment',
+    })
+      .then((resps) => {
+        const resp = resps.filter((r) => !!r.idToken)[0]
+        console.log(resps);
+
+        if (resp) {
+          renderView(resp.idToken);
+        }
+      });
+  }
+
+  const authFns = { redirectCodeFlow,
+                    popupOktaPostMessage,
+                    redirectFormPost,
+                  };
+
   const renderView = (idToken = null, userInfo = null) => {
     // render main view
     const containerEl = document.querySelector(config.container);
@@ -50,10 +83,24 @@ export function bootstrap (config) {
       idToken,
       //userInfo,
     });
+
     // Elm -> JS
-    app.ports.loginRedirect.subscribe(() => {
-      loginRedirect(auth);
+    app.ports.redirectFormPost.subscribe(() => {
+      redirectFormPost(auth);
     });
+
+    app.ports.popupOktaPostMessage.subscribe(() => {
+      popupOktaPostMessage(auth);
+    });
+
+    app.ports.invokeAuthFn.subscribe((fnName) => {
+      const fn = authFns[fnName];
+      if (!fn) {
+        console.error(`cannot find auth handler for ${fnName}`)
+      }
+      fn(auth);
+    });
+
   };
 
   renderView(config.idToken);

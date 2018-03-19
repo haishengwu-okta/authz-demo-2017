@@ -15,8 +15,9 @@ import Elm from './app2/Main.elm';
 import './app2/main.css';
 
 export function bootstrap (config) {
+  const baseUrl = `${config.oktaUrl}oauth2/${config.asId}`;
   const authzUrl = `${config.oktaUrl}oauth2/${config.asId}/v1/authorize`;
-  const issuer = `${config.oktaUrl}oauth2/${config.asId}`;
+  const issuer = baseUrl;
 
   // init auth sdk
   const auth = new OktaAuth({
@@ -58,8 +59,8 @@ export function bootstrap (config) {
     auth.token.getWithPopup({
       responseType: ['token', 'id_token' ],
       scopes: ['openid', 'profile'],
-      //responseMode: 'okta_post_message',
-      responseMode: 'fragment',
+      responseMode: 'okta_post_message',
+      //responseMode: 'fragment',
     })
       .then((resps) => {
         const resp = resps.filter((r) => !!r.idToken)[0]
@@ -80,8 +81,11 @@ export function bootstrap (config) {
     // render main view
     const containerEl = document.querySelector(config.container);
     const app = Elm.Main.embed(containerEl, {
-      idToken,
-      //userInfo,
+      oidcConfig: {
+        oidcBaseUrl: baseUrl,
+        redirectUri: config.redirectUri,
+        idToken,
+      }
     });
 
     // Elm -> JS

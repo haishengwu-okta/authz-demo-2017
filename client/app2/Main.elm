@@ -42,11 +42,13 @@ main =
 --------------------------------------------------
 
 type alias ProgramOptions =
-    { idToken : Maybe String
+    { oidcConfig : Model
     }
 
 type alias Model =
     { idToken : Maybe String
+    , oidcBaseUrl: String
+    , redirectUri: String
     }
 
 type Msg
@@ -59,7 +61,7 @@ type Msg
 --------------------------------------------------
 
 init : ProgramOptions  -> (Model, Cmd Msg)
-init opt = ( Model opt.idToken, Cmd.none )
+init opt = ( opt.oidcConfig, Cmd.none )
 
 
 --------------------------------------------------
@@ -81,7 +83,7 @@ view : Model -> Html Msg
 view m =
     div [ name "elm-main-container" ]
       [ viewButtons
-      , viewToken m.idToken
+      , viewToken m
       ]
 
 viewButtons : Html Msg
@@ -117,14 +119,25 @@ viewButtons =
             ]
 
         ]
-viewToken : Maybe String -> Html Msg
-viewToken token =
-    case token of
+viewToken : Model -> Html Msg
+viewToken m =
+    case m.idToken of
         Nothing -> span [] [ text "no id token found" ]
         Just t -> div []
                   [ h1 [] [ text "id_token" ]
                   , code [] [ text t ]
+                  , div [] [ logoutButton m.oidcBaseUrl m.redirectUri t ]
                   ]
+
+logoutButton : String
+             -> String
+             -> String
+             -> Html Msg
+logoutButton baseUrl redirectUri idToken =
+    a [ href (baseUrl ++ "/v1/logout?id_token_hint=" ++ idToken ++ "&post_logout_redirect_uri=" ++ redirectUri)
+      , class "ui button blue"
+      ]
+    [ text "/v1/logout"]
 
 --------------------------------------------------
 -- PORTs

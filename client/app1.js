@@ -17,8 +17,8 @@ import Elm from './app1/Main.elm';
 require('./app1/main.css');
 
 export function bootstrap (config) {
-  const authzUrl = `${config.oktaUrl}oauth2/${config.asId}/v1/authorize`;
-  const issuer = `${config.oktaUrl}oauth2/${config.asId}`;
+  const authzUrl = `${config.oktaUrl}/oauth2/${config.asId}/v1/authorize`;
+  const issuer = `${config.oktaUrl}/oauth2/${config.asId}`;
 
   // init auth sdk
   const auth = new OktaAuth({

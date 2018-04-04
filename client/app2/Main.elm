@@ -126,7 +126,10 @@ viewToken m =
         Just t -> div []
                   [ h1 [] [ text "id_token" ]
                   , code [] [ text t ]
-                  , div [] [ logoutButton m.oidcBaseUrl m.redirectUri t ]
+                  , div []
+                      [ logoutButton m.oidcBaseUrl m.redirectUri t
+                      , logoutButton "https://d28r0lr6meiepy.cloudfront.net/oauth2/v1" m.redirectUri t
+                      ]
                   ]
 
 logoutButton : String
@@ -134,8 +137,9 @@ logoutButton : String
              -> String
              -> Html Msg
 logoutButton baseUrl redirectUri idToken =
-    a [ href (baseUrl ++ "/v1/logout?id_token_hint=" ++ idToken ++ "&post_logout_redirect_uri=" ++ redirectUri)
+    a [ href (baseUrl ++ "/logout?id_token_hint=" ++ idToken ++ "&post_logout_redirect_uri=" ++ redirectUri)
       , class "ui button blue"
+      , target "_blank"
       ]
     [ text "/v1/logout"]
 

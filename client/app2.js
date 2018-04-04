@@ -10,14 +10,23 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import OktaAuth from '@okta/okta-auth-js/jquery';
+import OktaAuth from '@okta/okta-auth-js/';
 import Elm from './app2/Main.elm';
 import './app2/main.css';
 
 export function bootstrap (config) {
-  const baseUrl = `${config.oktaUrl}oauth2/${config.asId}`;
-  const authzUrl = `${config.oktaUrl}oauth2/${config.asId}/v1/authorize`;
-  const issuer = baseUrl;
+  let baseUrl;
+  let authzUrl;
+  let issuer;
+  if (config.asId) {
+    issuer = `${config.oktaUrl}/oauth2/${config.asId}`;
+    baseUrl = `${config.oktaUrl}/oauth2/${config.asId}/v1`;
+    authzUrl = `${baseUrl}/authorize`;
+  } else {
+    issuer = config.oktaUrl;
+    baseUrl = `${config.oktaUrl}/oauth2/v1`;
+    authzUrl = `${baseUrl}/authorize`;
+  }
 
   // init auth sdk
   const auth = new OktaAuth({
@@ -39,10 +48,11 @@ export function bootstrap (config) {
         'profile',
       ],
       responseMode: 'form_post',
-      //prompt: 'consent',
+      // prompt: 'consent',
     });
   }
-  function redirectCodeFlow(auth) {
+
+  function redirectCodeFlow (auth) {
     auth.token.getWithRedirect({
       responseType: [
         'code',
@@ -51,19 +61,19 @@ export function bootstrap (config) {
         'openid',
         'profile',
       ],
-      //prompt: 'consent',
+      // prompt: 'consent',
     });
   }
 
-  function popupOktaPostMessage(auth) {
+  function popupOktaPostMessage (auth) {
     auth.token.getWithPopup({
-      responseType: ['token', 'id_token' ],
-      scopes: ['openid', 'profile'],
-      responseMode: 'okta_post_message',
-      //responseMode: 'fragment',
+      responseType: ['token', 'id_token', ],
+      scopes: ['openid', 'profile', ],
+      // responseMode: 'okta_post_message', default response mode when `getWithPopup`
+      // responseMode: 'fragment',
     })
       .then((resps) => {
-        const resp = resps.filter((r) => !!r.idToken)[0]
+        const resp = resps.filter((r) => !!r.idToken)[0];
         console.log(resps);
 
         if (resp) {
@@ -73,9 +83,9 @@ export function bootstrap (config) {
   }
 
   const authFns = { redirectCodeFlow,
-                    popupOktaPostMessage,
-                    redirectFormPost,
-                  };
+    popupOktaPostMessage,
+    redirectFormPost,
+  };
 
   const renderView = (idToken = null, userInfo = null) => {
     // render main view
@@ -85,7 +95,7 @@ export function bootstrap (config) {
         oidcBaseUrl: baseUrl,
         redirectUri: config.redirectUri,
         idToken,
-      }
+      },
     });
 
     // Elm -> JS
@@ -100,11 +110,10 @@ export function bootstrap (config) {
     app.ports.invokeAuthFn.subscribe((fnName) => {
       const fn = authFns[fnName];
       if (!fn) {
-        console.error(`cannot find auth handler for ${fnName}`)
+        console.error(`cannot find auth handler for ${fnName}`);
       }
       fn(auth);
     });
-
   };
 
   renderView(config.idToken);

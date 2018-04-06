@@ -72,7 +72,7 @@ export function bootstrap (config) {
       // responseMode: 'okta_post_message', default response mode when `getWithPopup`
       // responseMode: 'fragment',
     })
-      .then((resps) => {
+      .done((resps) => {
         const resp = resps.filter((r) => !!r.idToken)[0];
         console.log(resps);
 

@@ -2,9 +2,9 @@
 # yarn lockfile v1
 
 
-"@okta/okta-auth-js@^1.14.0":
-  version "1.14.0"
-  resolved "https://artifacts.aue1d.saasure.com:443/artifactory/api/npm/npm-okta/@okta/okta-auth-js/-/@okta/okta-auth-js-1.14.0.tgz#bb1f4961f8967242e2d7c4d3a784715d5a8ae3e5"
+"@okta/okta-auth-js@^1.15.0":
+  version "1.15.0"
+  resolved "https://artifacts.aue1d.saasure.com:443/artifactory/api/npm/npm-okta/@okta/okta-auth-js/-/@okta/okta-auth-js-1.15.0.tgz#4a040aefe3a4ed55534933a77c0c7ee1fe22a43a"
   dependencies:
     Base64 "0.3.0"
     q "1.4.1"

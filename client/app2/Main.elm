@@ -128,7 +128,6 @@ viewToken m =
                   , code [] [ text t ]
                   , div []
                       [ logoutButton m.oidcBaseUrl m.redirectUri t
-                      , logoutButton "https://d28r0lr6meiepy.cloudfront.net/oauth2/v1" m.redirectUri t
                       ]
                   ]
 

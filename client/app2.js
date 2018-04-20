@@ -11,6 +11,7 @@
  */
 
 import OktaAuth from '@okta/okta-auth-js/';
+import * as R from 'ramda';
 import Elm from './app2/Main.elm';
 import './app2/main.css';
 
@@ -48,7 +49,7 @@ export function bootstrap (config) {
         'profile',
       ],
       responseMode: 'form_post',
-      // prompt: 'consent',
+      prompt: 'consent',
     });
   }
 
@@ -87,9 +88,20 @@ export function bootstrap (config) {
     redirectFormPost,
   };
 
-  const renderView = (idToken = null, userInfo = null) => {
+  const renderView = (idTokenRaw = null, userInfo = null) => {
     // render main view
     const containerEl = document.querySelector(config.container);
+    let idToken = null;
+
+    if (idTokenRaw) {
+      const decodedIdToken = auth.token.decode(idTokenRaw).payload;
+      const displayLabelOfIdToken = R.pick(['iss', 'name', 'org', 'preferred_username']);
+      idToken = R.merge({
+        idTokenRaw, 
+        org: null,
+      }, displayLabelOfIdToken(decodedIdToken));
+    }
+
     const app = Elm.Main.embed(containerEl, {
       oidcConfig: {
         oidcBaseUrl: baseUrl,

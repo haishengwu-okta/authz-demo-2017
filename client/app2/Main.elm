@@ -26,6 +26,7 @@ import Date
 import Json.Encode as Encode
 import Json.Decode as Decode
 import Json.Decode.Pipeline as DP
+import Maybe
 
 main : Program ProgramOptions Model Msg
 main =
@@ -36,7 +37,6 @@ main =
         , subscriptions = \_ -> Sub.none
         }
 
-
 --------------------------------------------------
 -- MODEL
 --------------------------------------------------
@@ -45,8 +45,16 @@ type alias ProgramOptions =
     { oidcConfig : Model
     }
 
+type alias IdToken = 
+  { iss : String
+  , name : String
+  , preferred_username : String
+  , org : Maybe String
+  , idTokenRaw : String
+  }
+
 type alias Model =
-    { idToken : Maybe String
+    { idToken : Maybe IdToken
     , oidcBaseUrl: String
     , redirectUri: String
     }
@@ -125,17 +133,33 @@ viewToken m =
         Nothing -> span [] [ text "no id token found" ]
         Just t -> div []
                   [ h1 [] [ text "id_token" ]
-                  , code [] [ text t ]
+                  , ul [] 
+                    (List.append 
+                      [ li [] [ text ("issuer: " ++ t.iss) ]
+                      , li [] [ text ("name: " ++ t.name) ]
+                      , li [] [ text ("preferred_username: " ++ t.preferred_username) ]
+                      ] 
+                      (orgInfo t.org)
+                    )
                   , div []
-                      [ logoutButton m.oidcBaseUrl m.redirectUri t
+                      [ logoutButton m.oidcBaseUrl m.redirectUri t.org t.idTokenRaw
                       ]
                   ]
 
+orgInfo : Maybe String -> List (Html Msg)
+orgInfo org = 
+  case org of
+    Nothing -> []
+    Just o -> [li [] [ text ("org: " ++ o) ]]
+
 logoutButton : String
              -> String
+             -> Maybe String
              -> String
              -> Html Msg
-logoutButton baseUrl redirectUri idToken =
+logoutButton oidcBaseUrl redirectUri maybeOrg idToken =
+  let baseUrl = Maybe.withDefault oidcBaseUrl (Maybe.map (\x -> x ++ "/oauth2/v1") maybeOrg)
+  in
     a [ href (baseUrl ++ "/logout?id_token_hint=" ++ idToken ++ "&post_logout_redirect_uri=" ++ redirectUri)
       , class "ui button blue"
       , target "_blank"

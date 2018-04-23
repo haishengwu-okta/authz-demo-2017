@@ -45,7 +45,7 @@ type alias ProgramOptions =
     { oidcConfig : Model
     }
 
-type alias IdToken = 
+type alias IdToken =
   { iss : String
   , name : String
   , preferred_username : String
@@ -133,21 +133,21 @@ viewToken m =
         Nothing -> span [] [ text "no id token found" ]
         Just t -> div []
                   [ h1 [] [ text "id_token" ]
-                  , ul [] 
-                    (List.append 
+                  , ul []
+                    (List.append
                       [ li [] [ text ("issuer: " ++ t.iss) ]
                       , li [] [ text ("name: " ++ t.name) ]
                       , li [] [ text ("preferred_username: " ++ t.preferred_username) ]
-                      ] 
+                      ]
                       (orgInfo t.org)
                     )
+                  , code [] [ text t.idTokenRaw ]
                   , div []
-                      [ logoutButton m.oidcBaseUrl m.redirectUri t.org t.idTokenRaw
-                      ]
+                      [ logoutButton m.oidcBaseUrl m.redirectUri t.org t.idTokenRaw]
                   ]
 
 orgInfo : Maybe String -> List (Html Msg)
-orgInfo org = 
+orgInfo org =
   case org of
     Nothing -> []
     Just o -> [li [] [ text ("org: " ++ o) ]]

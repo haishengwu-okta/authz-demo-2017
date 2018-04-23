@@ -63,6 +63,7 @@ type Msg
     = RedirectFormPost
       | PopupOktaPostMessage
       | RedirectCodeFlow
+      | RedirectFragement
 
 --------------------------------------------------
 -- INIT
@@ -82,6 +83,8 @@ update msg model =
     RedirectFormPost -> ( model, invokeAuthFn "redirectFormPost" )
     PopupOktaPostMessage -> ( model, invokeAuthFn "popupOktaPostMessage" )
     RedirectCodeFlow -> ( model, invokeAuthFn "redirectCodeFlow" )
+    RedirectFragement -> ( model, invokeAuthFn "redirectFragment" )
+
 
 --------------------------------------------------
 -- VIEW
@@ -106,6 +109,16 @@ viewButtons =
                           [ text "Redirect - Okta Form Post" ]
                     ]
               ]
+
+        , div [ class "item" ]
+            [ div [ class "content"]
+                  [ button [ class "ui icon button blue"
+                           , onClick RedirectFragement
+                           ]
+                        [ text "Redirect - fragement" ]
+                  ]
+            ]
+
         , div [ class "item" ]
             [ div [ class "content"]
                   [ button [ id "login-okta-post-message"
@@ -171,5 +184,3 @@ logoutButton oidcBaseUrl redirectUri maybeOrg idToken =
 --------------------------------------------------
 
 port invokeAuthFn : String -> Cmd msg
-port redirectFormPost : () -> Cmd msg
-port popupOktaPostMessage : () -> Cmd msg

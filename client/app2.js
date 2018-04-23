@@ -53,6 +53,20 @@ export function bootstrap (config) {
     });
   }
 
+  function redirectFragment (auth) {
+    auth.token.getWithRedirect({
+      responseType: [
+        'token',
+        'id_token',
+      ],
+      scopes: [
+        'openid',
+        'profile',
+      ],
+      prompt: 'consent',
+    });
+  }
+
   function redirectCodeFlow (auth) {
     auth.token.getWithRedirect({
       responseType: [
@@ -83,21 +97,23 @@ export function bootstrap (config) {
       });
   }
 
-  const authFns = { redirectCodeFlow,
+  const authFns = {
+    redirectCodeFlow,
+    redirectFragment,
     popupOktaPostMessage,
     redirectFormPost,
   };
 
-  const renderView = (idTokenRaw = null, userInfo = null) => {
+  const renderView = (idTokenRaw = null) => {
     // render main view
     const containerEl = document.querySelector(config.container);
-    let idToken = null;
 
+    let idToken = null;
     if (idTokenRaw) {
       const decodedIdToken = auth.token.decode(idTokenRaw).payload;
       const displayLabelOfIdToken = R.pick(['iss', 'name', 'org', 'preferred_username']);
       idToken = R.merge({
-        idTokenRaw, 
+        idTokenRaw,
         org: null,
       }, displayLabelOfIdToken(decodedIdToken));
     }
@@ -111,14 +127,6 @@ export function bootstrap (config) {
     });
 
     // Elm -> JS
-    app.ports.redirectFormPost.subscribe(() => {
-      redirectFormPost(auth);
-    });
-
-    app.ports.popupOktaPostMessage.subscribe(() => {
-      popupOktaPostMessage(auth);
-    });
-
     app.ports.invokeAuthFn.subscribe((fnName) => {
       const fn = authFns[fnName];
       if (!fn) {
@@ -128,7 +136,20 @@ export function bootstrap (config) {
     });
   };
 
-  renderView(config.idToken);
+  if (config.idToken) {
+    renderView(config.idToken);
+  } else {
+    auth.token.parseFromUrl()
+      .then((token = []) => {
+        const idTokenResp = token.filter((t) => !!t.idToken);
+        if (!idTokenResp.length) {
+          renderView();
+        } else {
+          renderView(idTokenResp[0].idToken);
+        }
+      })
+      .catch(() => renderView());
+  }
 }
 
 export default bootstrap;

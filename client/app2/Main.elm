@@ -115,7 +115,7 @@ viewButtons =
                   [ button [ class "ui icon button blue"
                            , onClick RedirectFragement
                            ]
-                        [ text "Redirect - fragement" ]
+                        [ text "Redirect - Fragement" ]
                   ]
             ]
 
@@ -148,13 +148,13 @@ viewToken m =
                   [ h1 [] [ text "id_token" ]
                   , ul []
                     (List.append
-                      [ li [] [ text ("issuer: " ++ t.iss) ]
+                      [ li [] [ code [] [ text t.idTokenRaw ] ]
+                      , li [] [ text ("issuer: " ++ t.iss) ]
                       , li [] [ text ("name: " ++ t.name) ]
                       , li [] [ text ("preferred_username: " ++ t.preferred_username) ]
                       ]
                       (orgInfo t.org)
                     )
-                  , code [] [ text t.idTokenRaw ]
                   , div []
                       [ logoutButton m.oidcBaseUrl m.redirectUri t.org t.idTokenRaw]
                   ]

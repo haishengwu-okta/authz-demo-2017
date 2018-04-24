@@ -16,26 +16,15 @@ import Elm from './app2/Main.elm';
 import './app2/main.css';
 
 export function bootstrap (config) {
-  let baseUrl;
-  let authzUrl;
-  let issuer;
-  if (config.asId) {
-    issuer = `${config.oktaUrl}/oauth2/${config.asId}`;
-    baseUrl = `${config.oktaUrl}/oauth2/${config.asId}/v1`;
-    authzUrl = `${baseUrl}/authorize`;
-  } else {
-    issuer = config.oktaUrl;
-    baseUrl = `${config.oktaUrl}/oauth2/v1`;
-    authzUrl = `${baseUrl}/authorize`;
-  }
-
   // init auth sdk
   const auth = new OktaAuth({
     url: config.oktaUrl,
-    issuer: issuer,
     clientId: config.clientId,
     redirectUri: config.redirectUri,
-    authorizeUrl: authzUrl,
+    issuer: config.asId,
+    //tokenManager: {
+      //autoRefresh: true
+    //},
   });
 
   function redirectFormPost (auth) {
@@ -82,12 +71,13 @@ export function bootstrap (config) {
 
   function popupOktaPostMessage (auth) {
     auth.token.getWithPopup({
-      responseType: ['token', 'id_token', ],
-      scopes: ['openid', 'profile', ],
+      //responseType: ['token', 'id_token', ],
+      responseType: ['id_token'],
+      scopes: ['openid', 'profile', 'email', 'groups' ],
       // responseMode: 'okta_post_message', default response mode when `getWithPopup`
       // responseMode: 'fragment',
     })
-      .done((resps) => {
+      .then((resps) => {
         const resp = resps.filter((r) => !!r.idToken)[0];
         console.log(resps);
 
@@ -120,7 +110,7 @@ export function bootstrap (config) {
 
     const app = Elm.Main.embed(containerEl, {
       oidcConfig: {
-        oidcBaseUrl: baseUrl,
+        oidcBaseUrl: config.oktaUrl,
         redirectUri: config.redirectUri,
         idToken,
       },
@@ -142,13 +132,17 @@ export function bootstrap (config) {
     auth.token.parseFromUrl()
       .then((token = []) => {
         const idTokenResp = token.filter((t) => !!t.idToken);
+        //console.log(token, idTokenResp);
         if (!idTokenResp.length) {
           renderView();
         } else {
           renderView(idTokenResp[0].idToken);
         }
       })
-      .catch(() => renderView());
+      .catch((exception) => {
+        console.error('error when read id token from uri', exception);
+        renderView();
+      });
   }
 }
 

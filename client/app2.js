@@ -22,9 +22,9 @@ export function bootstrap (config) {
     clientId: config.clientId,
     redirectUri: config.redirectUri,
     issuer: config.asId,
-    //tokenManager: {
-      //autoRefresh: true
-    //},
+    // tokenManager: {
+    // autoRefresh: true
+    // },
   });
 
   function redirectFormPost (auth) {
@@ -39,6 +39,7 @@ export function bootstrap (config) {
       ],
       responseMode: 'form_post',
       prompt: 'consent',
+      // prompt: 'login',
     });
   }
 
@@ -52,7 +53,8 @@ export function bootstrap (config) {
         'openid',
         'profile',
       ],
-      prompt: 'consent',
+      // prompt: 'consent',
+      // prompt: 'login'
     });
   }
 
@@ -71,9 +73,9 @@ export function bootstrap (config) {
 
   function popupOktaPostMessage (auth) {
     auth.token.getWithPopup({
-      //responseType: ['token', 'id_token', ],
-      responseType: ['id_token'],
-      scopes: ['openid', 'profile', 'email', 'groups' ],
+      // responseType: ['token', 'id_token', ],
+      responseType: ['id_token',],
+      scopes: ['openid', 'profile', 'email', 'groups', ],
       // responseMode: 'okta_post_message', default response mode when `getWithPopup`
       // responseMode: 'fragment',
     })
@@ -87,11 +89,19 @@ export function bootstrap (config) {
       });
   }
 
+  function logout () {
+    auth.signOut()
+      .then(() => {
+        window.location.assign('/apps/app2');
+      });
+  }
+
   const authFns = {
     redirectCodeFlow,
     redirectFragment,
     popupOktaPostMessage,
     redirectFormPost,
+    logout,
   };
 
   const renderView = (idTokenRaw = null) => {
@@ -101,7 +111,7 @@ export function bootstrap (config) {
     let idToken = null;
     if (idTokenRaw) {
       const decodedIdToken = auth.token.decode(idTokenRaw).payload;
-      const displayLabelOfIdToken = R.pick(['iss', 'name', 'org', 'preferred_username']);
+      const displayLabelOfIdToken = R.pick(['iss', 'name', 'org', 'preferred_username',]);
       idToken = R.merge({
         idTokenRaw,
         org: null,
@@ -132,7 +142,6 @@ export function bootstrap (config) {
     auth.token.parseFromUrl()
       .then((token = []) => {
         const idTokenResp = token.filter((t) => !!t.idToken);
-        //console.log(token, idTokenResp);
         if (!idTokenResp.length) {
           renderView();
         } else {

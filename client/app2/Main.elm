@@ -64,6 +64,7 @@ type Msg
       | PopupOktaPostMessage
       | RedirectCodeFlow
       | RedirectFragement
+      | Logout
 
 --------------------------------------------------
 -- INIT
@@ -84,6 +85,7 @@ update msg model =
     PopupOktaPostMessage -> ( model, invokeAuthFn "popupOktaPostMessage" )
     RedirectCodeFlow -> ( model, invokeAuthFn "redirectCodeFlow" )
     RedirectFragement -> ( model, invokeAuthFn "redirectFragment" )
+    Logout -> ( model, invokeAuthFn "logout" )
 
 
 --------------------------------------------------
@@ -156,7 +158,7 @@ viewToken m =
                       (orgInfo t.org)
                     )
                   , div []
-                      [ logoutButton m.oidcBaseUrl m.redirectUri t.org t.idTokenRaw]
+                      [ logoutButton ]
                   ]
 
 orgInfo : Maybe String -> List (Html Msg)
@@ -165,18 +167,12 @@ orgInfo org =
     Nothing -> []
     Just o -> [li [] [ text ("org: " ++ o) ]]
 
-logoutButton : String
-             -> String
-             -> Maybe String
-             -> String
-             -> Html Msg
-logoutButton oidcBaseUrl redirectUri maybeOrg idToken =
-  let baseUrl = Maybe.withDefault oidcBaseUrl (Maybe.map (\x -> x ++ "/oauth2/v1") maybeOrg)
-  in
-    a [ href (baseUrl ++ "/logout?id_token_hint=" ++ idToken ++ "&post_logout_redirect_uri=" ++ redirectUri)
-      , class "ui button blue"
-      , target "_blank"
-      ]
+logoutButton : Html Msg
+logoutButton =
+  button 
+    [ class "ui button blue"
+    , onClick Logout
+    ]
     [ text "/v1/logout"]
 
 --------------------------------------------------

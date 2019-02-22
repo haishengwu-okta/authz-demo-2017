@@ -10,9 +10,9 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-/* eslint import/no-unresolved:0 import/no-extraneous-dependencies:0, no-console:0 */
 const path = require('path');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
+const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const webpack = require('webpack');
 
 const semanticUiDir = require.resolve('semantic-ui-css/semantic.min.css');
@@ -22,13 +22,10 @@ const clientDir = 'client';
 console.log(`Building frontend assets into ${outPath}`);
 
 module.exports = {
+  mode: 'development',
   entry: {
-    app1: [
-      `./${clientDir}/app1.js`,
-    ],
-    app2: [
-      `./${clientDir}/app2.js`,
-    ],
+    app1: `./${clientDir}/app1.js`,
+    app2: `./${clientDir}/app2.js`,
   },
   output: {
     path: outPath,
@@ -37,6 +34,7 @@ module.exports = {
   },
   devtool: 'source-map',
   plugins: [
+    //new BundleAnalyzerPlugin(),
     new CopyWebpackPlugin([
       { from: semanticUiDir, to: 'css/semantic-ui' },
       { from: 'public/images', to: 'images' },
@@ -46,24 +44,26 @@ module.exports = {
     }),
   ],
   module: {
-    loaders: [
+    rules: [
       {
-        loader: 'babel-loader',
         test: /\.js$/,
         include: path.join(__dirname, clientDir),
-        query: {
-          presets: ['es2015'],
-        },
+        use: {
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env']
+          }
+        }
       },
       {
         test: /\.elm$/,
         include: path.join(__dirname, clientDir),
-        loader: 'elm-webpack-loader',
+        use: 'elm-webpack-loader',
       },
       {
         test: /\.css$/,
         include: path.join(__dirname, clientDir),
-        loader: [
+        use: [
           'style-loader',
           'css-loader'
         ]

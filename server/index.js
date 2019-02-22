@@ -56,11 +56,11 @@ const appsH = (req, res) => {
 const appsPostH = (req, res) => {
   const appName = req.params.name;
   setTimeout(() => {
-    res.render(appName, { 
+    res.render(appName, {
       config,
       idToken: req.body.id_token,
     });
-  }, 2000);
+  }, 100);
 };
 
 // These are the routes that need to be implemented to handle the

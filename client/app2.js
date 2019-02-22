@@ -10,53 +10,149 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import OktaAuth from '@okta/okta-auth-js/jquery';
+import OktaAuth from '@okta/okta-auth-js/';
+import * as R from 'ramda';
 import Elm from './app2/Main.elm';
-
 import './app2/main.css';
 
-function loginRedirect (auth) {
-  auth.token.getWithRedirect({
-    responseType: [
-      'token',
-      'id_token',
-    ],
-    scopes: [
-      'openid',
-      'profile',
-    ],
-    responseMode: 'form_post',
-    //prompt: 'consent',
-  });
-}
-
 export function bootstrap (config) {
-  const authzUrl = `${config.oktaUrl}oauth2/${config.asId}/v1/authorize`;
-  const issuer = `${config.oktaUrl}oauth2/${config.asId}`;
-
   // init auth sdk
   const auth = new OktaAuth({
     url: config.oktaUrl,
-    issuer: issuer,
     clientId: config.clientId,
     redirectUri: config.redirectUri,
-    authorizeUrl: authzUrl,
+    issuer: config.asId,
+    // tokenManager: {
+    // autoRefresh: true
+    // },
   });
 
-  const renderView = (idToken = null, userInfo = null) => {
+  function redirectFormPost (auth) {
+    auth.token.getWithRedirect({
+      responseType: [
+        'token',
+        'id_token',
+      ],
+      scopes: [
+        'openid',
+        'profile',
+      ],
+      responseMode: 'form_post',
+      prompt: 'consent',
+      // prompt: 'login',
+    });
+  }
+
+  function redirectFragment (auth) {
+    auth.token.getWithRedirect({
+      responseType: [
+        'token',
+        'id_token',
+      ],
+      scopes: [
+        'openid',
+        'profile',
+      ],
+      // prompt: 'consent',
+      // prompt: 'login'
+    });
+  }
+
+  function redirectCodeFlow (auth) {
+    auth.token.getWithRedirect({
+      responseType: [
+        'code',
+      ],
+      scopes: [
+        'openid',
+        'profile',
+      ],
+      // prompt: 'consent',
+    });
+  }
+
+  function popupOktaPostMessage (auth) {
+    auth.token.getWithPopup({
+      // responseType: ['token', 'id_token', ],
+      responseType: ['id_token',],
+      scopes: ['openid', 'profile', 'email', 'groups', ],
+      // responseMode: 'okta_post_message', default response mode when `getWithPopup`
+      // responseMode: 'fragment',
+    })
+      .then((resps) => {
+        const resp = resps.filter((r) => !!r.idToken)[0];
+        console.log(resps);
+
+        if (resp) {
+          renderView(resp.idToken);
+        }
+      });
+  }
+
+  function logout () {
+    auth.signOut()
+      .then(() => {
+        window.location.assign('/apps/app2');
+      });
+  }
+
+  const authFns = {
+    redirectCodeFlow,
+    redirectFragment,
+    popupOktaPostMessage,
+    redirectFormPost,
+    logout,
+  };
+
+  const renderView = (idTokenRaw = null) => {
     // render main view
     const containerEl = document.querySelector(config.container);
+
+    let idToken = null;
+    if (idTokenRaw) {
+      const decodedIdToken = auth.token.decode(idTokenRaw).payload;
+      const displayLabelOfIdToken = R.pick(['iss', 'name', 'org', 'preferred_username',]);
+      idToken = R.merge({
+        idTokenRaw,
+        org: null,
+      }, displayLabelOfIdToken(decodedIdToken));
+    }
+
     const app = Elm.Main.embed(containerEl, {
-      idToken,
-      //userInfo,
+      oidcConfig: {
+        oidcBaseUrl: config.oktaUrl,
+        redirectUri: config.redirectUri,
+        idToken,
+      },
     });
+
     // Elm -> JS
-    app.ports.loginRedirect.subscribe(() => {
-      loginRedirect(auth);
+    app.ports.invokeAuthFn.subscribe((fnName) => {
+      const fn = authFns[fnName];
+      if (!fn) {
+        console.error(`cannot find auth handler for ${fnName}`);
+      }
+      fn(auth);
     });
   };
 
-  renderView(config.idToken);
+  if (config.idToken) {
+    renderView(config.idToken);
+  } else {
+    auth.token.parseFromUrl()
+      .then((token = []) => {
+        const idTokenResp = token.filter((t) => !!t.idToken);
+        if (!idTokenResp.length) {
+          renderView();
+        } else {
+          renderView(idTokenResp[0].idToken);
+        }
+      })
+      .catch((exception) => {
+        console.error('error when read id token from uri', exception);
+        renderView();
+      });
+  }
 }
 
 export default bootstrap;

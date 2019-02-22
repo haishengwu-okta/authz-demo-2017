@@ -26,6 +26,7 @@ import Date
 import Json.Encode as Encode
 import Json.Decode as Decode
 import Json.Decode.Pipeline as DP
+import Maybe
 
 main : Program ProgramOptions Model Msg
 main =
@@ -36,28 +37,41 @@ main =
         , subscriptions = \_ -> Sub.none
         }
 
-
 --------------------------------------------------
 -- MODEL
 --------------------------------------------------
 
 type alias ProgramOptions =
-    { idToken : Maybe String
+    { oidcConfig : Model
     }
 
+type alias IdToken =
+  { iss : String
+  , name : String
+  , preferred_username : String
+  , org : Maybe String
+  , idTokenRaw : String
+  }
+
 type alias Model =
-    { idToken : Maybe String
+    { idToken : Maybe IdToken
+    , oidcBaseUrl: String
+    , redirectUri: String
     }
 
 type Msg
-    = LoginRedirect
+    = RedirectFormPost
+      | PopupOktaPostMessage
+      | RedirectCodeFlow
+      | RedirectFragement
+      | Logout
 
 --------------------------------------------------
 -- INIT
 --------------------------------------------------
 
 init : ProgramOptions  -> (Model, Cmd Msg)
-init opt = ( Model opt.idToken, Cmd.none )
+init opt = ( opt.oidcConfig, Cmd.none )
 
 
 --------------------------------------------------
@@ -67,7 +81,11 @@ init opt = ( Model opt.idToken, Cmd.none )
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    LoginRedirect -> ( model, loginRedirect () )
+    RedirectFormPost -> ( model, invokeAuthFn "redirectFormPost" )
+    PopupOktaPostMessage -> ( model, invokeAuthFn "popupOktaPostMessage" )
+    RedirectCodeFlow -> ( model, invokeAuthFn "redirectCodeFlow" )
+    RedirectFragement -> ( model, invokeAuthFn "redirectFragment" )
+    Logout -> ( model, invokeAuthFn "logout" )
 
 
 --------------------------------------------------
@@ -77,28 +95,88 @@ update msg model =
 view : Model -> Html Msg
 view m =
     div [ name "elm-main-container" ]
-      [
-      (case m.idToken of 
-        Nothing -> viewButton
-        Just token -> viewToken token
-      )
+      [ viewButtons
+      , viewToken m
       ]
-viewButton : Html Msg      
-viewButton = button [ id "login"
-                    , class "ui icon button blue"
-                    , onClick LoginRedirect
-                    ]
-                    [ text "Link Okta Account" ]
 
-viewToken : String -> Html Msg
-viewToken token = 
-    div []
-      [ h1 [] [ text "id_token" ]
-      , code [] [ text token ]    
-      ]           
+viewButtons : Html Msg
+viewButtons =
+    div [ class "ui list"]
+        [ div [ class "item" ]
+              [ div [ class "content"]
+                    [ button [ id "login"
+                             , class "ui icon button blue"
+                             , onClick RedirectFormPost
+                             ]
+                          [ text "Redirect - Okta Form Post" ]
+                    ]
+              ]
+
+        , div [ class "item" ]
+            [ div [ class "content"]
+                  [ button [ class "ui icon button blue"
+                           , onClick RedirectFragement
+                           ]
+                        [ text "Redirect - Fragement" ]
+                  ]
+            ]
+
+        , div [ class "item" ]
+            [ div [ class "content"]
+                  [ button [ id "login-okta-post-message"
+                           , class "ui icon button blue"
+                           , onClick PopupOktaPostMessage
+                           ]
+                        [ text "Popup - Okta Post Message" ]
+                  ]
+            ]
+
+        , div [ class "item" ]
+            [ div [ class "content"]
+                  [ button [ id "login-code-flow"
+                           , class "ui icon button blue"
+                           , onClick RedirectCodeFlow
+                           ]
+                        [ text "Redirect - authorize code" ]
+                  ]
+            ]
+
+        ]
+viewToken : Model -> Html Msg
+viewToken m =
+    case m.idToken of
+        Nothing -> span [] [ text "no id token found" ]
+        Just t -> div []
+                  [ h1 [] [ text "id_token" ]
+                  , ul []
+                    (List.append
+                      [ li [] [ code [] [ text t.idTokenRaw ] ]
+                      , li [] [ text ("issuer: " ++ t.iss) ]
+                      , li [] [ text ("name: " ++ t.name) ]
+                      , li [] [ text ("preferred_username: " ++ t.preferred_username) ]
+                      ]
+                      (orgInfo t.org)
+                    )
+                  , div []
+                      [ logoutButton ]
+                  ]
+
+orgInfo : Maybe String -> List (Html Msg)
+orgInfo org =
+  case org of
+    Nothing -> []
+    Just o -> [li [] [ text ("org: " ++ o) ]]
+
+logoutButton : Html Msg
+logoutButton =
+  button 
+    [ class "ui button blue"
+    , onClick Logout
+    ]
+    [ text "/v1/logout"]
 
 --------------------------------------------------
 -- PORTs
 --------------------------------------------------
 
-port loginRedirect : () -> Cmd msg
+port invokeAuthFn : String -> Cmd msg

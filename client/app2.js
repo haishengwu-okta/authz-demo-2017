@@ -74,8 +74,8 @@ export function bootstrap (config) {
   function popupOktaPostMessage (auth) {
     auth.token.getWithPopup({
       // responseType: ['token', 'id_token', ],
-      responseType: ['id_token',],
-      scopes: ['openid', 'profile', 'email', 'groups', ],
+      responseType: ['id_token'],
+      scopes: ['openid', 'profile', 'email', 'groups'],
       // responseMode: 'okta_post_message', default response mode when `getWithPopup`
       // responseMode: 'fragment',
     })
@@ -111,7 +111,7 @@ export function bootstrap (config) {
     let idToken = null;
     if (idTokenRaw) {
       const decodedIdToken = auth.token.decode(idTokenRaw).payload;
-      const displayLabelOfIdToken = R.pick(['iss', 'name', 'org', 'preferred_username',]);
+      const displayLabelOfIdToken = R.pick(['iss', 'name', 'org', 'preferred_username']);
       idToken = R.merge({
         idTokenRaw,
         org: null,

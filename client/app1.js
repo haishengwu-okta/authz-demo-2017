@@ -10,7 +10,7 @@
  * See the License for the specific language governing permissions and limitations under the License.
  */
 
-import OktaAuth from '@okta/okta-auth-js/jquery';
+import OktaAuth from '@okta/okta-auth-js';
 import loginRedirect from './app1/login-redirect';
 import Elm from './app1/Main.elm';
 

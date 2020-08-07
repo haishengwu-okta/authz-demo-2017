@@ -16,12 +16,15 @@ import Elm from './app2/Main.elm';
 import './app2/main.css';
 
 export function bootstrap (config) {
+  const issuer = `${config.oktaUrl}/oauth2/${config.asId}`;
+
   // init auth sdk
   const auth = new OktaAuth({
     url: config.oktaUrl,
     clientId: config.clientId,
     redirectUri: config.redirectUri,
-    issuer: config.asId,
+    issuer,
+    pkce: false,
     // tokenManager: {
     // autoRefresh: true
     // },
@@ -75,24 +78,28 @@ export function bootstrap (config) {
     auth.token.getWithPopup({
       // responseType: ['token', 'id_token', ],
       responseType: ['id_token'],
-      scopes: ['openid', 'profile', 'email', 'groups'],
+      scopes: ['openid', 'profile', 'email',],
       // responseMode: 'okta_post_message', default response mode when `getWithPopup`
       // responseMode: 'fragment',
     })
-      .then((resps) => {
-        const resp = resps.filter((r) => !!r.idToken)[0];
-        console.log(resps);
-
-        if (resp) {
-          renderView(resp.idToken);
+      .then(resp => {
+        const idTokenResp = resp.tokens && resp.tokens.idToken;
+        if (idTokenResp) {
+          auth.tokenManager.add('idToken', idTokenResp);
+          auth.tokenManager.add('accessToken', resp.tokens.accessToken);
+          renderView(idTokenResp.idToken);
         }
       });
   }
 
-  function logout () {
-    auth.signOut()
+  async function logout () {
+    await auth.revokeAccessToken(); // strongly recommended
+    auth.closeSession()
       .then(() => {
         window.location.assign('/apps/app2');
+      })
+      .catch((err) => {
+        console.error('app2.js - failed to logout', err);
       });
   }
 
@@ -140,12 +147,14 @@ export function bootstrap (config) {
     renderView(config.idToken);
   } else {
     auth.token.parseFromUrl()
-      .then((token = []) => {
-        const idTokenResp = token.filter((t) => !!t.idToken);
-        if (!idTokenResp.length) {
+      .then((resp = {}) => {
+        const idTokenResp = resp.tokens && resp.tokens.idToken;
+        if (!idTokenResp) {
           renderView();
         } else {
-          renderView(idTokenResp[0].idToken);
+          auth.tokenManager.add('idToken', idTokenResp);
+          auth.tokenManager.add('accessToken', resp.tokens.accessToken);
+          renderView(idTokenResp.idToken);
         }
       })
       .catch((exception) => {
@@ -153,6 +162,8 @@ export function bootstrap (config) {
         renderView();
       });
   }
+
+  window.aj = auth;
 }
 
 export default bootstrap;

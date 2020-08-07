@@ -81,8 +81,8 @@ init opt = ( opt.oidcConfig, Cmd.none )
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
-    RedirectFormPost -> ( model, invokeAuthFn "redirectFormPost" )
     PopupOktaPostMessage -> ( model, invokeAuthFn "popupOktaPostMessage" )
+    RedirectFormPost -> ( model, invokeAuthFn "redirectFormPost" )
     RedirectCodeFlow -> ( model, invokeAuthFn "redirectCodeFlow" )
     RedirectFragement -> ( model, invokeAuthFn "redirectFragment" )
     Logout -> ( model, invokeAuthFn "logout" )
@@ -108,7 +108,7 @@ viewButtons =
                              , class "ui icon button blue"
                              , onClick RedirectFormPost
                              ]
-                          [ text "Redirect - Okta Form Post" ]
+                          [ text "Redirect - response_mode=form_post and access token, id token " ]
                     ]
               ]
 
@@ -117,17 +117,7 @@ viewButtons =
                   [ button [ class "ui icon button blue"
                            , onClick RedirectFragement
                            ]
-                        [ text "Redirect - Fragement" ]
-                  ]
-            ]
-
-        , div [ class "item" ]
-            [ div [ class "content"]
-                  [ button [ id "login-okta-post-message"
-                           , class "ui icon button blue"
-                           , onClick PopupOktaPostMessage
-                           ]
-                        [ text "Popup - Okta Post Message" ]
+                        [ text "Redirect - response_mode=null and access token, id token" ]
                   ]
             ]
 
@@ -137,11 +127,22 @@ viewButtons =
                            , class "ui icon button blue"
                            , onClick RedirectCodeFlow
                            ]
-                        [ text "Redirect - authorize code" ]
+                        [ text "Redirect - response_mode=null and auth code" ]
+                  ]
+            ]
+
+        , div [ class "item" ]
+            [ div [ class "content"]
+                  [ button [ id "login-okta-post-message"
+                           , class "ui icon button blue"
+                           , onClick PopupOktaPostMessage
+                           ]
+                        [ text "Popup - response_mode=form_post" ]
                   ]
             ]
 
         ]
+
 viewToken : Model -> Html Msg
 viewToken m =
     case m.idToken of
